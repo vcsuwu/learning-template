@@ -1,0 +1,63 @@
+version: '3.2'
+
+networks:
+  frontend:
+  backend:
+
+services:
+
+  frontend:
+    build: frontend
+    ports:
+      - 20080:80
+    volumes:
+      # Re-use local composer cache via host-volume
+      - ~/.composer-docker/cache:/root/.composer/cache:delegated
+      # Mount source-code for development
+      - ./:/app
+    depends_on:
+      - mysql
+    networks:
+      - frontend
+
+  backend:
+    build: backend
+    ports:
+      - 21080:80
+    volumes:
+      # Re-use local composer cache via host-volume
+      - ~/.composer-docker/cache:/root/.composer/cache:delegated
+      # Mount source-code for development
+      - ./:/app
+    depends_on:
+      - mysql
+    networks:
+      - backend
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=store
+      - MYSQL_USER=owner
+      - MYSQL_PASSWORD=owner
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - 3306:3306
+    networks:
+      - frontend
+      - backend
+  
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - 8888:80
+    environment:
+      - PMA_HOST=mysql
+    depends_on:
+      - mysql
+    networks:
+      - backend
